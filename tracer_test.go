@@ -68,7 +68,7 @@ func setupSentryMock(t *testing.T, requests []string) (deferFn func()) {
 
 	// Enable Sentry wrapper.
 	d := trace.DefaultTracer
-	trace.DefaultTracer = ocsentry.WrapTracer(trace.DefaultTracer)
+	trace.DefaultTracer = ocsentry.WrapTracer(trace.DefaultTracer, ocsentry.SkipTransactionNames("GET /health", "GET /metrics"))
 
 	trace.ApplyConfig(trace.Config{
 		DefaultSampler: trace.AlwaysSample(),
@@ -134,6 +134,10 @@ func TestWrapTracer(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	s1.End()
+
+	_, s3 := trace.StartSpan(context.Background(), "GET /health")
+
+	s3.End()
 }
 
 func TestWrapTracer_ochttp(t *testing.T) {
@@ -157,9 +161,9 @@ func TestWrapTracer_ochttp(t *testing.T) {
 		  },
 		  "level":"info","platform":"go",
 		  "sdk":{
-			"name":"sentry.go","version":"0.10.0",
+			"name":"sentry.go","version":"0.11.0",
 			"integrations":["ContextifyFrames","Environment","IgnoreErrors","Modules"],
-			"packages":[{"name":"sentry-go","version":"0.10.0"}]
+			"packages":[{"name":"sentry-go","version":"0.11.0"}]
 		  },
 		  "server_name":"<ignore-diff>","user":"<ignore-diff>","type":"transaction",
 		  "start_timestamp":"<ignore-diff>",
@@ -182,9 +186,9 @@ func TestWrapTracer_ochttp(t *testing.T) {
 		  },
 		  "level":"info","platform":"go",
 		  "sdk":{
-			"name":"sentry.go","version":"0.10.0",
+			"name":"sentry.go","version":"0.11.0",
 			"integrations":["ContextifyFrames","Environment","IgnoreErrors","Modules"],
-			"packages":[{"name":"sentry-go","version":"0.10.0"}]
+			"packages":[{"name":"sentry-go","version":"0.11.0"}]
 		  },
 		  "server_name":"<ignore-diff>","user":"<ignore-diff>","type":"transaction",
 		  "start_timestamp":"<ignore-diff>",
@@ -207,9 +211,9 @@ func TestWrapTracer_ochttp(t *testing.T) {
 		  },
 		  "level":"info","platform":"go",
 		  "sdk":{
-			"name":"sentry.go","version":"0.10.0",
+			"name":"sentry.go","version":"0.11.0",
 			"integrations":["ContextifyFrames","Environment","IgnoreErrors","Modules"],
-			"packages":[{"name":"sentry-go","version":"0.10.0"}]
+			"packages":[{"name":"sentry-go","version":"0.11.0"}]
 		  },
 		  "server_name":"<ignore-diff>","user":"<ignore-diff>","type":"transaction",
 		  "start_timestamp":"<ignore-diff>",

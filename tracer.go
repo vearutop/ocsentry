@@ -7,17 +7,42 @@ import (
 	"go.opencensus.io/trace"
 )
 
+// Options control trace wrapper.
+type Options struct {
+	SkipTransactionNames []string
+}
+
+// Option is a functional option.
+type Option func(o *Options)
+
+// SkipTransactionNames is an option to skip transactions with provided names from sentry collection.
+//
+// Can be useful to filter out automated requests that do not bring value, e.g. "GET /health", "GET /metrics".
+func SkipTransactionNames(names ...string) Option {
+	return func(o *Options) {
+		o.SkipTransactionNames = names
+	}
+}
+
 // WrapTracer creates a tracer that manages Sentry spans together with OpenCensus spans.
-func WrapTracer(tracer trace.Tracer) trace.Tracer {
+func WrapTracer(tracer trace.Tracer, options ...Option) trace.Tracer {
 	if _, ok := tracer.(sentryTracer); ok {
 		return tracer
 	}
 
-	return sentryTracer{Tracer: tracer}
+	t := sentryTracer{Tracer: tracer}
+
+	for _, o := range options {
+		o(&t.options)
+	}
+
+	return t
 }
 
 type sentryTracer struct {
 	trace.Tracer
+
+	options Options
 }
 
 type contextKey struct{}
@@ -43,6 +68,12 @@ func (st sentryTracer) startSpan(ctx context.Context, name string, span *trace.S
 	hasParent := parent != trace.SpanContext{}
 
 	if !hasParent {
+		for _, n := range st.options.SkipTransactionNames {
+			if name == n {
+				return ctx, span
+			}
+		}
+
 		ss = sentry.StartSpan(ctx, name, sentry.TransactionName(name))
 	} else {
 		ss = sentry.StartSpan(ctx, name)
