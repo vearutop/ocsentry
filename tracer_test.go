@@ -135,8 +135,10 @@ func TestWrapTracer(t *testing.T) {
 
 	s1.End()
 
-	_, s3 := trace.StartSpan(context.Background(), "GET /health")
+	ctx, s3 := trace.StartSpan(context.Background(), "GET /health")
+	_, s3a := trace.StartSpan(ctx, "should be skipped too")
 
+	s3a.End()
 	s3.End()
 }
 

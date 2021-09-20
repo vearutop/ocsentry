@@ -59,7 +59,13 @@ func (st sentryTracer) NewContext(parent context.Context, s *trace.Span) context
 	return context.WithValue(parent, contextKey{}, s)
 }
 
+type skipSpanCtxKey struct{}
+
 func (st sentryTracer) startSpan(ctx context.Context, name string, span *trace.Span, parent trace.SpanContext) (context.Context, *trace.Span) {
+	if ctx.Value(skipSpanCtxKey{}) != nil {
+		return ctx, span
+	}
+
 	var (
 		sc = span.SpanContext()
 		ss *sentry.Span
@@ -70,7 +76,7 @@ func (st sentryTracer) startSpan(ctx context.Context, name string, span *trace.S
 	if !hasParent {
 		for _, n := range st.options.SkipTransactionNames {
 			if name == n {
-				return ctx, span
+				return context.WithValue(ctx, skipSpanCtxKey{}, struct{}{}), span
 			}
 		}
 
